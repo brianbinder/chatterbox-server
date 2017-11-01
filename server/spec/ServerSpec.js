@@ -44,6 +44,22 @@ describe('Node Server Request Listener Function', function() {
     expect(res._ended).to.equal(true);
   });
 
+  // it('Should accept more posts to /classes/room', function() {
+  //   var moreMsg = {
+  //     username: 'brokenCodyBot',
+  //     message: 'i aM nOT bRokEn'
+  //   }
+  //   var req = new stubs.request('/classes/messages', 'POST', moreMsg);
+  //   var res = new stubs.response();
+
+  //   handler.requestHandler(req,res);
+
+  //   expect(res._responseCode).to.equal(201);
+
+  //   expect(res._ended).to.equal(true);
+
+  // });
+
   it('Should send an object containing a `results` array', function() {
     var req = new stubs.request('/classes/messages', 'GET');
     var res = new stubs.response();
@@ -87,7 +103,7 @@ describe('Node Server Request Listener Function', function() {
 
     expect(res._responseCode).to.equal(201);
 
-      // Now if we request the log for that room the message we posted should be there:
+    // Now if we request the log for that room the message we posted should be there:
     req = new stubs.request('/classes/messages', 'GET');
     res = new stubs.response();
 
@@ -114,6 +130,53 @@ describe('Node Server Request Listener Function', function() {
       function() {
         expect(res._responseCode).to.equal(404);
       });
+  });
+
+  it('should create unique message id numbers', function() {
+    var message1 = {
+      username: 'codybot',
+      message: 'Im not broken'
+    };
+    var message2 = {
+      username: 'brokenCodybot',
+      message: 'iM nOT bRoKEn!'
+    };
+    var req1 = new stubs.request('classes/messages', 'POST', message1);
+    res1 = new stubs.response();
+    var req2 = new stubs.request('classes/messages', 'POST', message2);
+    res2 = new stubs.response();
+
+    handler.requestHandler(req1, res1);
+    handler.requestHandler(req2, res2);
+    var messages = JSON.parse(res1._data);
+    var messages2 = JSON.parse(res2._data);
+    expect(messages.objectId === messages2.objectId).to.equal(false);
+  });
+
+  it('should create messages in chronological order', function() {
+    var message1 = {
+      username: 'codybot',
+      message: 'Im not broken'
+    };
+    var message2 = {
+      username: 'brokenCodybot',
+      message: 'iM nOT bRoKEn!'
+    };
+
+    var req1 = new stubs.request('classes/messages', 'POST', message1);
+    res1 = new stubs.response();
+    var req2 = new stubs.request('classes/messages', 'POST', message2);
+    res2 = new stubs.response();
+
+    handler.requestHandler(req1, res1);
+    handler.requestHandler(req2, res2);
+
+    req = new stubs.request('/classes/messages', 'GET');
+    res = new stubs.response();
+
+    handler.requestHandler(req, res);
+    var messages = JSON.parse(res._data).results;
+    expect(messages[0].createdAt <= messages[messages.length - 1].createdAt).to.equal(true);
   });
 
 });
